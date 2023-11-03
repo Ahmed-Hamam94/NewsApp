@@ -26,7 +26,7 @@ class NewsService: ServiceProtocol {
               case .allNews(let query, let category):
                   return [
                       "q": query,
-                      "country": "eg",
+                      "country": "Us",
                       "apiKey": EndPoint.api_Key,
                       "category": category
                   ]
