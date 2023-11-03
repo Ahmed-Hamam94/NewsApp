@@ -44,7 +44,7 @@ class HomeViewModel: HomeViewModelProtocol, ViewModel {
     // output    class mn el7aga ely mfrod ttl3 mn viewmodel
     class Output {
         var newssPuplish: PublishSubject<[Articles]> = .init()
-       
+        var tenItems:PublishSubject<[Articles]> = .init()
     }
     
     var input: Input = .init()
@@ -71,7 +71,11 @@ class HomeViewModel: HomeViewModelProtocol, ViewModel {
            switch result {
            case .success(let news):
                print("news: \(news)")
-               self.output.newssPuplish.onNext(news)
+               let filteredNews = news.filter({ $0.title != "[Removed]"})
+               let limited = Array(filteredNews.prefix(10))
+               
+               self.output.newssPuplish.onNext(filteredNews)
+               self.output.tenItems.onNext(limited)
            case .failure(let error):
                print("error: \(error)")
            }
@@ -82,6 +86,12 @@ class HomeViewModel: HomeViewModelProtocol, ViewModel {
        }
        
     }
-
+    
+    
+//    func getTenItems()-> Observable<[Articles]> {
+//        let sliderNews = self.newssPuplish.take(5)
+//        return sliderNews
+//    }
+   
 }
 
