@@ -19,19 +19,22 @@ class NewsService: ServiceProtocol {
     
     let networkManager = NetworkManager()
     
-    func fetchNews(query: String = "", category: String = "", completion: @escaping (Result<[Articles], APIError>) -> Void) {
-        
-         var parameters: [String:Any]? {
-             switch EndPoint.allNews() {
-              case .allNews(let query, let category):
-                  return [
-                      "q": query,
-                      "country": "Us",
-                      "apiKey": EndPoint.api_Key,
-                      "category": category
-                  ]
-              }
-          }
+   
+    
+    func fetchNews(query: String = "", category: String , completion: @escaping (Result<[Articles], APIError>) -> Void) {
+        var parameters: [String:Any]? {
+            
+            switch EndPoint.allNews(category: category) {
+             case .allNews(let query, let category):
+                 return [
+                     "q": query,
+                     "country": "Us",
+                     "apiKey": EndPoint.api_Key,
+                     "category": category
+                 ]
+             }
+         }
+       
         
         networkManager.request(endPoint: EndPoint.allNews(query: query, category: category), method: .Get,parameters: parameters, completion: completion)
     }
