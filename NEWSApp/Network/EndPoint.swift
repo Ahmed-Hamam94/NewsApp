@@ -15,7 +15,7 @@ enum EndPoint {
    
     
  
-    case allNews(query: String = "", category: String = "")
+    case allNews(query: String = "", category: String )
  
     var path: String{
         switch self{
