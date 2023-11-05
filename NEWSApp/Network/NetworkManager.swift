@@ -38,7 +38,7 @@ final class NetworkManager {
                 urlRequest.httpBody = bodyData
             }
         }
-        print(parameter)
+     //   print(parameter)
         return urlRequest
         
     }
@@ -56,7 +56,7 @@ final class NetworkManager {
             if let data = data {
                 result = .success(data)
                
-                let responseString = String(data: data, encoding: .utf8) ?? "Could not stringify our data"
+              //  let responseString = String(data: data, encoding: .utf8) ?? "Could not stringify our data"
           //  print("The response is:\n\(responseString)")
                 
             } else if let error = error {
