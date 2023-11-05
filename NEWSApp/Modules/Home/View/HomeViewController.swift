@@ -9,8 +9,13 @@ import UIKit
 import RxSwift
 import RxCocoa
 import RxDataSources
+import SideMenu
  
-class HomeViewController: UIViewController, UIScrollViewDelegate {
+protocol SliderSelectDelegate {
+    func didSelectCell(article: Articles)
+}
+
+class HomeViewController: UIViewController, MenuListDelegate {
 
     @IBOutlet weak var sliderCollectioView: UICollectionView!
     
@@ -20,6 +25,10 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     var homeViewModel: HomeViewModelProtocol?
     lazy var counter = 0
     var timer: Timer?
+    let menue = MenueListController()
+    private var sideMenue: SideMenuNavigationController?
+    var delegate: SliderSelectDelegate?
+    var category: String?
     
     lazy var dataSource = RxCollectionViewSectionedReloadDataSource<NewsSection> (configureCell: { dataSource , collectionView, indexPath, item in
        
@@ -49,7 +58,6 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
             let sliderCell = collectionView.dequeueReusableCell(withReuseIdentifier: "SliderDetailsCollectionViewCell", for: indexPath) as! SliderDetailsCollectionViewCell
             // Configure the cell with the item from the slider section
             sliderCell.configure(with: item)
-        
       //  sliderCell.dataSorcee = dataSource
             return sliderCell
       
@@ -61,17 +69,23 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         title = "News"
         homeViewModel = HomeViewModel()
         prepareNavigation()
-      
-      //  configureCollectioView()
+        prepareSideMenu()
         registerCell()
-        bindCollectionView()
-        //subscribeWithCollectionView()
-        homeViewModel?.viewDidLoad()
+
+
+        bindToNewsCollectionView()
+        bindToSliderCollectionView()
+        didSelectItem()
+        homeViewModel?.viewDidLoad(category: "general")
+       // detailsViewModel = DetailsViewModel()
+
        
     }
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        
         startTimer()
+        
     }
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
@@ -81,6 +95,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         stopTimer()
         guard timer == nil else {return}
         timer = Timer.scheduledTimer(timeInterval: 3.0, target: self, selector: #selector(moveToNext), userInfo: nil, repeats: true)
+       
+
     }
     
     private func stopTimer(){
@@ -90,7 +106,7 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     }
 
     @objc private func moveToNext(){
-        if let sliderArr = homeViewModel?.output.tenItems.asObservable() {
+        if let sliderArr = homeViewModel?.output.tenItems {
             sliderArr
                 .map { $0.count }
                 .subscribe(onNext: { [weak self] count in
@@ -109,8 +125,8 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
                 })
                 .disposed(by: bag)
         }
+       // homeViewModel?.viewDidLoad(category: category)
         
-        homeViewModel?.viewDidLoad()
         
     }
     
@@ -120,6 +136,16 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
         let menueBarButtonItem = UIBarButtonItem(image: UIImage(systemName:"line.3.horizontal"), style: .plain, target: self, action: #selector(onMenueButtonClicked))
        // menueBarButtonItem.width = 40
         self.navigationItem.leftBarButtonItem  = menueBarButtonItem
+
+    }
+    
+    func prepareSideMenu() {
+        menue.menuDelegate = self
+        
+        sideMenue = SideMenuNavigationController(rootViewController: menue)
+ 
+        SideMenuManager.default.leftMenuNavigationController = sideMenue
+        SideMenuManager.default.addPanGestureToPresent(toView: self.view)
 
     }
  
@@ -135,19 +161,13 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
     }
     
     @objc func onMenueButtonClicked(_ sender: Any){
-        print("SearchButtonClicked")
+        print("ButtonClicked")
+        // Define the menu
+       // prepareSideMenu()
+        present(sideMenue!, animated: true, completion: nil)
+
     }
-    
-    func subscribeWithCollectionView(){
-     
-        homeViewModel?.output.newssPuplish.bind(to: newsCollectionView.rx.items(cellIdentifier: String(describing: NewsCollectionViewCell.self), cellType: NewsCollectionViewCell.self)) { index , article, cell in
-           // let indexPath = IndexPath(item: index, section: 0)
-            cell.configure(with: article)
-     
-        }.disposed(by: bag)
-        
-        //newsCollectionView.rx.itemSelected
-    }
+
     
     private func layout()-> UICollectionViewFlowLayout{
 
@@ -180,17 +200,56 @@ class HomeViewController: UIViewController, UIScrollViewDelegate {
      return layout
     }
 
-    func bindCollectionView(){
+    func bindToNewsCollectionView(){
         homeViewModel?.output.newssPuplish.map { [NewsSection(original: NewsSection(header: "", items: $0), items: $0)] }
                .bind(to: newsCollectionView.rx.items(dataSource: dataSource))
                .disposed(by: bag)
         
+//        homeViewModel?.output.newssPuplish.map { [NewsSection(original: NewsSection(header: "", items: $0), items: $0)] }.bind(to: newsCollectionView.rx.itemSelected
+        
+      
+    }
+    
+    func bindToSliderCollectionView(){
         homeViewModel?.output.tenItems.asObservable().map{ [NewsSection(original: NewsSection(header: "", items: $0), items: $0)] }.bind(to: sliderCollectioView.rx.items(dataSource: sliderDataSource)).disposed(by: bag)
+    }
+    
+    func didSelectItem(){
+        
+        newsCollectionView.rx.itemSelected
+            .map { [weak self] indexPath in
+               // guard let self else {return}
+           
+                return self?.dataSource[indexPath.section].items[indexPath.row]
+            }
+            .filter { $0 != nil }
+            .map { $0! }
+            .subscribe(onNext: { [weak self] selectedItem in
+                let detailsVC = DetailsViewController()
+                var detailsViewModel: DetailsViewModelProtocol? = DetailsViewModel(article: selectedItem)
+
+              //  self?.detailsViewModel?.article = selectedItem
+
+                detailsVC.article = selectedItem
+               // detailsVC.configure(with: selectedItem)
+               // self?.detailsViewModel?.input.newssPuplish? = selectedItem
+                self?.navigationController?.pushViewController(detailsVC, animated: true)
+            })
+            .disposed(by: bag)
  
+    }
+    
+    func didSelectCategory(_ category: MenueCategory)  {
+        self.category = category.id
+        homeViewModel?.viewDidLoad(category: category.id)
+        sideMenue?.dismiss(animated: true)
     }
 }
 //MARK: -
 
-extension HomeViewController {
+extension HomeViewController{
+    
+ 
+    
    
 }
