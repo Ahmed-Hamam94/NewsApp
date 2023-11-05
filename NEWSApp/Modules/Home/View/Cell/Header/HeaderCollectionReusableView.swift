@@ -12,6 +12,9 @@ class HeaderCollectionReusableView: UICollectionReusableView {
     private let headerLabel: UILabel = {
         let label = UILabel()
         label.text = "Latest News"
+        label.textAlignment = .center
+        label.font =  UIFont(name: "Arial Bold", size: 25)
+        label.textColor = .red
         return label
     }()
     
