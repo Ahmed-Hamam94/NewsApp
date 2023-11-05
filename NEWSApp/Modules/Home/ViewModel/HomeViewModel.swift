@@ -20,7 +20,7 @@ protocol HomeViewModelProtocol: AnyObject {
     var input: HomeViewModel.Input {get}
     var output: HomeViewModel.Output {get}
   //  var postsPuplish: PublishSubject<[Post]> {get}
-    func viewDidLoad()
+    func viewDidLoad(category: String?)
 
 }
 
@@ -33,8 +33,8 @@ enum HomeBinding {
 
 
 class HomeViewModel: HomeViewModelProtocol, ViewModel {
+  
    
-    
     
     // input class mn el7aga ely mfrod td5ol ll viewmodel
     class Input {
@@ -58,15 +58,15 @@ class HomeViewModel: HomeViewModelProtocol, ViewModel {
         self.input.newsService = newsService
     }
     
-    func viewDidLoad(){
-        callPostFromApi()
-       
+    func viewDidLoad(category: String? = nil){
+        callPostFromApi(category: category ?? "general")
+       // "general"
     }
     
-   private func callPostFromApi(){
+    private func callPostFromApi(category: String){
        input.bindingState.onNext(.showHud)
      
-       input.newsService?.fetchNews(query: "", category: "general") { [weak self] result in
+       input.newsService?.fetchNews(query: "", category: category) { [weak self] result in
            guard let self else {return}
            switch result {
            case .success(let news):
